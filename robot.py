@@ -9,6 +9,7 @@ from random import randint
 from std_msgs.msg import Int32
 from std_msgs.msg import String
 import time
+import sys
 
 #flags used to for robot
 global robot_map
@@ -47,11 +48,16 @@ robot_map = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
 # 5=  there is a wall
 
 #create publishers
-pubSensorL = rospy.Publisher('sensorL', Int32, queue_size=1)
-pubSensorR = rospy.Publisher('sensorR', Int32, queue_size=1)
-pubSensorM = rospy.Publisher('sensorM', Int32, queue_size=1)
-pubSensorB = rospy.Publisher('bumper', Int32, queue_size=1)
-pubLocation = rospy.Publisher('location', Int32, queue_size=1)
+pubSensorL = rospy.Publisher('/sensorL', Int32, queue_size=1)
+pubSensorR = rospy.Publisher('/sensorR', Int32, queue_size=1)
+pubSensorM = rospy.Publisher('/sensorM', Int32, queue_size=1)
+pubSensorB = rospy.Publisher('/bumper', Int32, queue_size=1)
+pubLocation = rospy.Publisher('/location', Int32, queue_size=1)
+
+def end():
+	a = True
+	while(a == True):
+		a = True
 
 #callback method for the motion command subscriber
 def callback(data):
@@ -93,7 +99,8 @@ def robo_brain(command):
 				counter = counter + 1
 				print ("-I am turning left")
 			elif motion_command == "Turn_Left" and next_map == 2:
-				match = True
+				counter = counter + 1
+				print ("-I am turning left")
 			elif motion_command == "Turn_Right" and next_map == 3:
 				counter = counter + 1
 				print ("-I am turning right")
@@ -103,6 +110,7 @@ def robo_brain(command):
 			elif motion_command == "Stop" and next_map == 5:
 				print ("-I stopped")
 				print ("-YAY! I completed the map")
+				end()
 			else:
 				if next_map == 5:
 					print ("-Ouch! I hit the wall. You should have told me to stop")
@@ -110,67 +118,69 @@ def robo_brain(command):
 					print("-I can't stop")
 					print ("-Come on! The map is not complete yet!") 			
 				else:
-					print ("-Ups.. I lost the black line")
+					print ("-Oops.. I lost the black line")
 					print ("-I found the line again. Let's keep moving.")
 
+			# update sensor data
+			# sensor1 = Left Sensor
+			# sensor2 = Middle Sensor
+			# sensor3 = Right Sensor
+			# bumper = Bumper Sensor
+
+			time.sleep(3) # comsider robot needs 3 secs to complete any motion
+			# update location value
+			location = counter
+			# update sensor values depending on next map value
+			if robot_map[counter] == 0:
+				sensor1 = 0
+				sensor2 = 1
+				sensor3 = 0
+				bumper = 0
+			elif robot_map[counter] == 1:
+				sensor1 = 1
+				sensor2 = 1
+				sensor3 = 0
+				bumper = 0
+			elif robot_map[counter] == 2:
+				sensor1 = 1
+				sensor2 = 0
+				sensor3 = 0
+				bumper = 0
+			elif robot_map[counter] == 3:
+				sensor1 = 0
+				sensor2 = 1
+				sensor3 = 1
+				bumper = 0
+			elif robot_map[counter] == 4:
+				sensor1 = 0
+				sensor2 = 0
+				sensor3 = 1
+				bumper = 0
+			elif robot_map[counter] == 5:
+				sensor1 = 1
+				sensor2 = 1
+				sensor3 = 1
+				bumper = 1
+			print ("-I am ready for the next command")
+	
+			#print (location)
 		# check if the robot is at the start location and alive
 		elif start == False:
 			if motion_command == "Go_Forward":
 				print ("-YES! I am alive and moving forward. Let's complete this map")
-				counter = counter + 1
+				location = 1
 				start =  True
 			else:
 				print ("-Ohh.. You forgot to tell me to go forward first!")
-				
-		# update sensor data
-		# sensor1 = Left Sensor
-		# sensor2 = Middle Sensor
-		# sensor3 = Right Sensor
-		# bumper = Bumper Sensor
-
-		time.sleep(5) # comsider robot needs 5 secs to complete any motion
-		# update location value
-		location = counter
-		# update sensor values depending on next map value
-		if robot_map[counter] == 0:
-			sensor1 = 0
-			sensor2 = 1
-			sensor3 = 0
-			bumper = 0
-		elif robot_map[counter] == 1:
-			sensor1 = 1
-			sensor2 = 1
-			sensor3 = 0
-			bumper = 0
-		elif robot_map[counter] == 2:
-			sensor1 = 1
-			sensor2 = 0
-			sensor3 = 0
-			bumper = 0
-		elif robot_map[counter] == 3:
-			sensor1 = 0
-			sensor2 = 1
-			sensor3 = 1
-			bumper = 0
-		elif robot_map[counter] == 4:
-			sensor1 = 0
-			sensor2 = 0
-			sensor3 = 1
-			bumper = 0
-		elif robot_map[counter] == 5:
-			sensor1 = 1
-			sensor2 = 1
-			sensor3 = 1
-			bumper = 1
-		print ("-I am ready for the next command")
+	
 	else:
 		print ("-I don't understand what you say! You send me a wrong command type")
 	busy = False # robot brain is not busy anymore
-
+	#print (busy)
 # initialize the robot node
 def robot():
 	rospy.init_node("robot", anonymous=True)
-	rate = rospy.Rate(2) # 2Hz
+	rate = rospy.Rate(10) # 2Hz
 	
 	rospy.Subscriber("motion_command", String, callback)
 
@@ -181,6 +191,7 @@ def robot():
 		pubSensorB.publish(bumper)
 		pubLocation.publish(location)
 	rate.sleep()
+	rospy.spin()
 
 if __name__ == '__main__':
 	print("Black Line Following Robot Simulator V1.0")
