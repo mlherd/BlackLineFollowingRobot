@@ -1,8 +1,22 @@
 #!/usr/bin/env python
 
-# Simple line following robot simulation
+# Simple Line Following Robot Simulator
+# V1.0
 # Created by Melih Erdogan for Intelligent Robotics 1 Assingment 3 
-# 11/09/2018
+# Last Update - 11/13/2018
+#
+#
+# Subscribed Topics
+# /motion_command - String
+#
+# Published Topics
+# /sebsorL - Int
+# /sensorM - Int
+# /sensorR - Int
+# /bumper - Int
+# /location - Int
+
+# Import Libraries 
 
 import rospy
 from random import randint
@@ -54,6 +68,8 @@ pubSensorM = rospy.Publisher('/sensorM', Int32, queue_size=1)
 pubSensorB = rospy.Publisher('/bumper', Int32, queue_size=1)
 pubLocation = rospy.Publisher('/location', Int32, queue_size=1)
 
+#end method for the node
+#infinite loop
 def end():
 	a = True
 	while(a == True):
@@ -68,7 +84,7 @@ def callback(data):
 
 #robot brain method
 def robo_brain(command):
-#initialize used variables
+	#define the used global variables
 	global counter
 	global match
 	global start
@@ -176,14 +192,20 @@ def robo_brain(command):
 	else:
 		print ("-I don't understand what you say! You send me a wrong command type")
 	busy = False # robot brain is not busy anymore
+	#print busy flag for debugging	
 	#print (busy)
+
 # initialize the robot node
 def robot():
+	#initilize the node
 	rospy.init_node("robot", anonymous=True)
-	rate = rospy.Rate(10) # 2Hz
+	#set the publishing rate
+	rate = rospy.Rate(10) # 10Hz
 	
+	#create a subscriber
 	rospy.Subscriber("motion_command", String, callback)
 
+	#publish sensor values
 	while not rospy.is_shutdown():	
 		pubSensorL.publish(sensor1)
 		pubSensorR.publish(sensor3)
